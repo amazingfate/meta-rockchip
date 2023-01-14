@@ -1,7 +1,7 @@
-From 6a16c04868bddafd73c61a69ab5e12eb5478e2b7 Mon Sep 17 00:00:00 2001
+From cee3fd370a896017919b2a40a9bb0dda4dd6315a Mon Sep 17 00:00:00 2001
 From: Jeffy Chen <jeffy.chen@rock-chips.com>
 Date: Mon, 31 May 2021 01:41:57 +0800
-Subject: [PATCH 10/15] HACK: [ozone/wayland]: Force disable implicit external
+Subject: [PATCH 10/16] HACK: [ozone/wayland]: Force disable implicit external
  sync
 
 The Mali's implicit external sync seems broken.
@@ -30,5 +30,5 @@ index e52394f2e..38ff3a8cc 100644
  
    base::OnceClosure fence_retired_callback = base::BindOnce(
 -- 
-2.34.1
+2.14.3
 

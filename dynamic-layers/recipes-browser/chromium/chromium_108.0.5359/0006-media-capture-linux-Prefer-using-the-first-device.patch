@@ -1,7 +1,7 @@
-From 2687f74586d238f525da5e92f7b27fa18b827ee4 Mon Sep 17 00:00:00 2001
+From 1fadb6f39ff9b1a61c8098428deb8c28a64a837f Mon Sep 17 00:00:00 2001
 From: Jeffy Chen <jeffy.chen@rock-chips.com>
 Date: Thu, 5 Nov 2020 12:22:52 +0800
-Subject: [PATCH 06/15] media: capture: linux: Prefer using the first device
+Subject: [PATCH 06/16] media: capture: linux: Prefer using the first device
 
 Somehow the newest chromium would prefer using the last device in some
 cases, e.g. apprtc.
@@ -10,7 +10,7 @@ Let's reverse the device array to workaround it.
 
 Signed-off-by: Jeffy Chen <jeffy.chen@rock-chips.com>
 ---
- .../capture/video/linux/video_capture_device_factory_linux.cc  | 3 ++-
+ media/capture/video/linux/video_capture_device_factory_linux.cc | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/media/capture/video/linux/video_capture_device_factory_linux.cc b/media/capture/video/linux/video_capture_device_factory_linux.cc
@@ -28,5 +28,5 @@ index bca335210..3e62711fe 100644
            VideoCaptureApi::LINUX_V4L2_SINGLE_PLANE, GetControlSupport(fd.get()),
            VideoCaptureTransportType::OTHER_TRANSPORT, facing_mode));
 -- 
-2.34.1
+2.14.3
 

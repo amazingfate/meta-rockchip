@@ -1,7 +1,7 @@
-From 3b4f87933aac20089c555c9c624d87142219435e Mon Sep 17 00:00:00 2001
+From e3c12832ed47f014f57ba872bcfcd5987accfeed Mon Sep 17 00:00:00 2001
 From: Jeffy Chen <jeffy.chen@rock-chips.com>
 Date: Fri, 10 Apr 2020 16:16:08 +0800
-Subject: [PATCH 05/15] media: gpu: v4l2: Use POLLIN for pending event
+Subject: [PATCH 05/16] media: gpu: v4l2: Use POLLIN for pending event
 
 The v4l-rkmpp is using eventfd to fake poll events which not supporting
 POLLPRI.
@@ -25,5 +25,5 @@ index 559e273d7..6485fc4fe 100644
  }
  
 -- 
-2.34.1
+2.14.3
 

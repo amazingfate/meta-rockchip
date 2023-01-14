@@ -1,7 +1,7 @@
-From 24a9b06c41deb68a4a648675be5b7e5e45ea9b50 Mon Sep 17 00:00:00 2001
+From df5529b1c67df0e7983f2639cdbc693f76286ae3 Mon Sep 17 00:00:00 2001
 From: Jeffy Chen <jeffy.chen@rock-chips.com>
 Date: Fri, 9 Sep 2022 18:54:08 +0800
-Subject: [PATCH 15/15] media: gpu: chromeos: Define new formats for old kernel
+Subject: [PATCH 15/16] media: gpu: chromeos: Define new formats for old kernel
 
 Signed-off-by: Jeffy Chen <jeffy.chen@rock-chips.com>
 ---
@@ -32,5 +32,5 @@ index 891959164..77dc337be 100644
  
  // Composes a Fourcc value.
 -- 
-2.34.1
+2.14.3
 

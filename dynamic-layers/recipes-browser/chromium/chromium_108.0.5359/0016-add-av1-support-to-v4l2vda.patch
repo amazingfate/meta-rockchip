@@ -1,0 +1,108 @@
+From ee4d66e0ace3f2b31acc00f2ec01faadc2872412 Mon Sep 17 00:00:00 2001
+From: amazingfate <liujianfeng1994@gmail.com>
+Date: Fri, 13 Jan 2023 19:44:40 +0800
+Subject: [PATCH 16/16] add av1 support to v4l2vda
+
+---
+ media/gpu/v4l2/v4l2_device.cc                         | 9 +++++++++
+ media/gpu/v4l2/v4l2_device.h                          | 4 ++++
+ media/gpu/v4l2/v4l2_vda_helpers.cc                    | 1 +
+ media/gpu/v4l2/v4l2_video_decode_accelerator.cc       | 2 +-
+ media/gpu/v4l2/v4l2_video_decoder.cc                  | 1 +
+ media/gpu/v4l2/v4l2_video_decoder_backend_stateful.cc | 1 +
+ 6 files changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/media/gpu/v4l2/v4l2_device.cc b/media/gpu/v4l2/v4l2_device.cc
+index e1b597c40..2d54407d3 100644
+--- a/media/gpu/v4l2/v4l2_device.cc
++++ b/media/gpu/v4l2/v4l2_device.cc
+@@ -1594,6 +1594,8 @@ uint32_t V4L2Device::VideoCodecProfileToV4L2PixFmt(VideoCodecProfile profile,
+     return V4L2_PIX_FMT_VP8;
+   } else if (profile >= VP9PROFILE_MIN && profile <= VP9PROFILE_MAX) {
+     return V4L2_PIX_FMT_VP9;
++  } else if (profile >= AV1PROFILE_MIN && profile <= AV1PROFILE_MAX) {
++    return V4L2_PIX_FMT_AV1;
+   } else {
+     DVLOGF(1) << "Unsupported profile: " << GetProfileName(profile);
+     return 0;
+@@ -1766,6 +1768,13 @@ std::vector<VideoCodecProfile> V4L2Device::V4L2PixFmtToVideoCodecProfiles(
+     case V4L2_PIX_FMT_VP9:
+       profiles = {VP9PROFILE_PROFILE0};
+       break;
++    case V4L2_PIX_FMT_AV1:
++      profiles = {
++          AV1PROFILE_PROFILE_MAIN,
++          AV1PROFILE_PROFILE_HIGH,
++          AV1PROFILE_PROFILE_PRO,
++      };
++      break;
+     default:
+       VLOGF(1) << "Unhandled pixelformat " << FourccToString(pix_fmt);
+       return {};
+diff --git a/media/gpu/v4l2/v4l2_device.h b/media/gpu/v4l2/v4l2_device.h
+index 439414c69..05cc911d3 100644
+--- a/media/gpu/v4l2/v4l2_device.h
++++ b/media/gpu/v4l2/v4l2_device.h
+@@ -55,6 +55,10 @@
+ #define V4L2_PIX_FMT_MM21 v4l2_fourcc('M', 'M', '2', '1')
+ #endif
+ 
++#ifndef V4L2_PIX_FMT_AV1
++#define V4L2_PIX_FMT_AV1 v4l2_fourcc('A', 'V', '0', '1') /* AV1 */
++#endif
++
+ namespace gfx {
+ struct NativePixmapPlane;
+ }  // namespace gfx
+diff --git a/media/gpu/v4l2/v4l2_vda_helpers.cc b/media/gpu/v4l2/v4l2_vda_helpers.cc
+index 71983d372..6fb5e6d87 100644
+--- a/media/gpu/v4l2/v4l2_vda_helpers.cc
++++ b/media/gpu/v4l2/v4l2_vda_helpers.cc
+@@ -152,6 +152,7 @@ InputBufferFragmentSplitter::CreateFromProfile(
+     case VideoCodec::kHEVC:
+     case VideoCodec::kVP8:
+     case VideoCodec::kVP9:
++    case VideoCodec::kAV1:
+       // VP8/VP9 don't need any frame splitting, use the default implementation.
+       return std::make_unique<v4l2_vda_helpers::InputBufferFragmentSplitter>();
+     default:
+diff --git a/media/gpu/v4l2/v4l2_video_decode_accelerator.cc b/media/gpu/v4l2/v4l2_video_decode_accelerator.cc
+index 08da713c9..20463abac 100644
+--- a/media/gpu/v4l2/v4l2_video_decode_accelerator.cc
++++ b/media/gpu/v4l2/v4l2_video_decode_accelerator.cc
+@@ -87,7 +87,7 @@ bool IsVp9KSVCStream(uint32_t input_format_fourcc,
+ 
+ // static
+ const uint32_t V4L2VideoDecodeAccelerator::supported_input_fourccs_[] = {
+-    V4L2_PIX_FMT_H264, V4L2_PIX_FMT_HEVC, V4L2_PIX_FMT_VP8, V4L2_PIX_FMT_VP9,
++    V4L2_PIX_FMT_H264, V4L2_PIX_FMT_HEVC, V4L2_PIX_FMT_VP8, V4L2_PIX_FMT_VP9, V4L2_PIX_FMT_AV1
+ };
+ 
+ // static
+diff --git a/media/gpu/v4l2/v4l2_video_decoder.cc b/media/gpu/v4l2/v4l2_video_decoder.cc
+index 57f818a3e..2737cf000 100644
+--- a/media/gpu/v4l2/v4l2_video_decoder.cc
++++ b/media/gpu/v4l2/v4l2_video_decoder.cc
+@@ -57,6 +57,7 @@ constexpr uint32_t kSupportedInputFourccs[] = {
+ #endif
+     V4L2_PIX_FMT_H264,      V4L2_PIX_FMT_HEVC,
+     V4L2_PIX_FMT_VP8,       V4L2_PIX_FMT_VP9,
++    V4L2_PIX_FMT_AV1,
+ };
+ 
+ }  // namespace
+diff --git a/media/gpu/v4l2/v4l2_video_decoder_backend_stateful.cc b/media/gpu/v4l2/v4l2_video_decoder_backend_stateful.cc
+index 1b204f722..4b97249a4 100644
+--- a/media/gpu/v4l2/v4l2_video_decoder_backend_stateful.cc
++++ b/media/gpu/v4l2/v4l2_video_decoder_backend_stateful.cc
+@@ -736,6 +736,7 @@ bool V4L2StatefulVideoDecoderBackend::IsSupportedProfile(
+ 	V4L2_PIX_FMT_HEVC,
+         V4L2_PIX_FMT_VP8,
+         V4L2_PIX_FMT_VP9,
++        V4L2_PIX_FMT_AV1,
+     };
+     scoped_refptr<V4L2Device> device = V4L2Device::Create();
+     VideoDecodeAccelerator::SupportedProfiles profiles =
+-- 
+2.14.3
+

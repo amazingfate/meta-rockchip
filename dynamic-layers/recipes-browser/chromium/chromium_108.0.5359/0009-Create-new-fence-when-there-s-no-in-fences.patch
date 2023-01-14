@@ -1,13 +1,13 @@
-From 0bebc793304408ee8b6b4cd3779d3cea3a72a418 Mon Sep 17 00:00:00 2001
+From 6aabf28ff7a9ee0fdf4b3c1b396456c33911bd8e Mon Sep 17 00:00:00 2001
 From: Jeffy Chen <jeffy.chen@rock-chips.com>
 Date: Mon, 31 May 2021 01:29:11 +0800
-Subject: [PATCH 09/15] Create new fence when there's no in-fences
+Subject: [PATCH 09/16] Create new fence when there's no in-fences
 
 There're cases that in-fences are not provided.
 
 Signed-off-by: Jeffy Chen <jeffy.chen@rock-chips.com>
 ---
- .../wayland/gpu/gbm_surfaceless_wayland.cc    | 21 +++++++++++++++++--
+ .../platform/wayland/gpu/gbm_surfaceless_wayland.cc | 21 +++++++++++++++++++--
  1 file changed, 19 insertions(+), 2 deletions(-)
 
 diff --git a/ui/ozone/platform/wayland/gpu/gbm_surfaceless_wayland.cc b/ui/ozone/platform/wayland/gpu/gbm_surfaceless_wayland.cc
@@ -58,5 +58,5 @@ index 00edfa64c..e52394f2e 100644
    base::OnceClosure fence_retired_callback = base::BindOnce(
        &GbmSurfacelessWayland::FenceRetired, weak_factory_.GetWeakPtr(), frame);
 -- 
-2.34.1
+2.14.3
 

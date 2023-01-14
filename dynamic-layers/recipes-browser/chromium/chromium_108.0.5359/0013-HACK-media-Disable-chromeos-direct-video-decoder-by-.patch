@@ -1,7 +1,7 @@
-From 3bd4f33bab08c8d1cddc98094d15e9d5266c4c87 Mon Sep 17 00:00:00 2001
+From 6ed10e21c0d7678e6891d28bab7e3d6c2d33bf02 Mon Sep 17 00:00:00 2001
 From: amazingfate <liujianfeng1994@gmail.com>
 Date: Tue, 10 Jan 2023 07:56:15 +0000
-Subject: [PATCH 13/15] HACK: media: Disable chromeos direct video decoder by
+Subject: [PATCH 13/16] HACK: media: Disable chromeos direct video decoder by
  default
 
 ---
@@ -22,5 +22,5 @@ index 24b2208d8..d2620ceea 100644
  // Limit the number of concurrent hardware decoder instances on ChromeOS.
  BASE_FEATURE(kLimitConcurrentDecoderInstances,
 -- 
-2.34.1
+2.14.3
 

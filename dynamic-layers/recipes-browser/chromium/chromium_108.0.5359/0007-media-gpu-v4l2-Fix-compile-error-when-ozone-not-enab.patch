@@ -1,7 +1,7 @@
-From 5f97cc37fde0f2e8cf6d36973b92621acb7e3e08 Mon Sep 17 00:00:00 2001
+From 2bad9589c3fe556d1c7fce73806edd8097959425 Mon Sep 17 00:00:00 2001
 From: amazingfate <liujianfeng1994@gmail.com>
 Date: Tue, 10 Jan 2023 07:49:21 +0000
-Subject: [PATCH 07/15] media: gpu: v4l2: Fix compile error when ozone not
+Subject: [PATCH 07/16] media: gpu: v4l2: Fix compile error when ozone not
  enabled
 
 ---
@@ -62,5 +62,5 @@ index 6485fc4fe..f1f1dd6c9 100644
  
  EGLBoolean GenericV4L2Device::DestroyEGLImage(EGLDisplay egl_display,
 -- 
-2.34.1
+2.14.3
 

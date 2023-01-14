@@ -1,7 +1,7 @@
-From 71ffe3bf4234ba22581f433818233c75d4a296ec Mon Sep 17 00:00:00 2001
+From b24f12d670c92e61d365880c5a8895947bf6cf35 Mon Sep 17 00:00:00 2001
 From: Jeffy Chen <jeffy.chen@rock-chips.com>
 Date: Mon, 31 May 2021 07:25:58 +0800
-Subject: [PATCH 11/15] HACK: media: capture: linux: Allow camera without
+Subject: [PATCH 11/16] HACK: media: capture: linux: Allow camera without
  supported format
 
 The chromium would only accept discrete frame sizes.
@@ -10,7 +10,7 @@ Hack it to make Rockchip ISP camera working.
 
 Signed-off-by: Jeffy Chen <jeffy.chen@rock-chips.com>
 ---
- .../video/linux/video_capture_device_factory_linux.cc       | 6 ++----
+ media/capture/video/linux/video_capture_device_factory_linux.cc | 6 ++----
  1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/media/capture/video/linux/video_capture_device_factory_linux.cc b/media/capture/video/linux/video_capture_device_factory_linux.cc
@@ -31,5 +31,5 @@ index 3e62711fe..921810271 100644
        // HACK: Somehow the newest chromium would prefer using the last device in some cases, e.g. apprtc
        devices_info.emplace(devices_info.begin(), VideoCaptureDeviceDescriptor(
 -- 
-2.34.1
+2.14.3
 

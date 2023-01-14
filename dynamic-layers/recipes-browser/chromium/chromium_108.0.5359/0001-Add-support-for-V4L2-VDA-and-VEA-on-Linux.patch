@@ -1,19 +1,20 @@
-From debeeff2747a0e6cd06ae08950040f9790ef1a3c Mon Sep 17 00:00:00 2001
+From 31886b004ee5961cdfd0f8091ca16586109692ef Mon Sep 17 00:00:00 2001
 From: amazingfate <liujianfeng1994@gmail.com>
-Date: Tue, 10 Jan 2023 07:11:36 +0000
-Subject: [PATCH 01/15] Add support for V4L2 VDA and VEA on Linux
+Date: Fri, 13 Jan 2023 15:56:36 +0800
+Subject: [PATCH 01/16] Add support for V4L2 VDA and VEA on Linux
 
 ---
- .../gpu_mjpeg_decode_accelerator_factory.cc   |  2 +-
- media/gpu/BUILD.gn                            |  1 +
- media/gpu/args.gni                            |  3 +
- .../gpu_video_decode_accelerator_factory.cc   |  8 +++
- .../gpu_video_decode_accelerator_factory.h    |  2 +
- media/gpu/v4l2/BUILD.gn                       | 42 +++++++----
- media/gpu/v4l2/generic_v4l2_device.cc         |  2 +-
- media/gpu/v4l2/v4l2_device.cc                 | 70 +++++++++++++++++++
- media/gpu/v4l2/v4l2_video_decoder.cc          |  7 ++
- 9 files changed, 120 insertions(+), 17 deletions(-)
+ .../gpu_mjpeg_decode_accelerator_factory.cc        |  2 +-
+ media/gpu/BUILD.gn                                 |  1 +
+ media/gpu/args.gni                                 |  3 +
+ media/gpu/chromeos/video_decoder_pipeline.cc       |  2 +-
+ media/gpu/gpu_video_decode_accelerator_factory.cc  | 18 ++++--
+ media/gpu/gpu_video_decode_accelerator_factory.h   |  4 +-
+ media/gpu/v4l2/BUILD.gn                            | 42 ++++++++-----
+ media/gpu/v4l2/generic_v4l2_device.cc              |  2 +-
+ media/gpu/v4l2/v4l2_device.cc                      | 70 ++++++++++++++++++++++
+ media/gpu/v4l2/v4l2_video_decoder.cc               |  7 +++
+ 10 files changed, 127 insertions(+), 24 deletions(-)
 
 diff --git a/components/chromeos_camera/gpu_mjpeg_decode_accelerator_factory.cc b/components/chromeos_camera/gpu_mjpeg_decode_accelerator_factory.cc
 index 020b12831..9a7164495 100644
@@ -54,13 +55,29 @@ index 813657af1..cd3e17693 100644
    # Indicates if Video4Linux2 AML encoder is used. This is used for AML
    # platforms which have v4l2 hardware encoder
    use_v4l2_codec_aml = false
+diff --git a/media/gpu/chromeos/video_decoder_pipeline.cc b/media/gpu/chromeos/video_decoder_pipeline.cc
+index c3143c5cf..f3aafdb2c 100644
+--- a/media/gpu/chromeos/video_decoder_pipeline.cc
++++ b/media/gpu/chromeos/video_decoder_pipeline.cc
+@@ -197,7 +197,7 @@ std::unique_ptr<VideoDecoder> VideoDecoderPipeline::Create(
+   } else {
+ #if BUILDFLAG(USE_VAAPI)
+     create_decoder_function_cb = base::BindOnce(&VaapiVideoDecoder::Create);
+-#elif BUILDFLAG(USE_V4L2_CODEC) && BUILDFLAG(IS_CHROMEOS_ASH)
++#elif BUILDFLAG(USE_V4L2_CODEC)
+     create_decoder_function_cb = base::BindOnce(&V4L2VideoDecoder::Create);
+ #else
+     return nullptr;
 diff --git a/media/gpu/gpu_video_decode_accelerator_factory.cc b/media/gpu/gpu_video_decode_accelerator_factory.cc
-index 92b9fcde8..3de16dcf7 100644
+index 92b9fcde8..fe11b5a66 100644
 --- a/media/gpu/gpu_video_decode_accelerator_factory.cc
 +++ b/media/gpu/gpu_video_decode_accelerator_factory.cc
-@@ -29,7 +29,9 @@
+@@ -27,9 +27,11 @@
+ #if BUILDFLAG(USE_VAAPI)
+ #include "media/gpu/vaapi/vaapi_video_decode_accelerator.h"
  #include "ui/gl/gl_implementation.h"
- #elif BUILDFLAG(USE_V4L2_CODEC) && BUILDFLAG(IS_CHROMEOS_ASH)
+-#elif BUILDFLAG(USE_V4L2_CODEC) && BUILDFLAG(IS_CHROMEOS_ASH)
++#elif BUILDFLAG(USE_V4L2_CODEC)
  #include "media/gpu/v4l2/v4l2_device.h"
 +#if !BUILDFLAG(USE_LINUX_V4L2)
  #include "media/gpu/v4l2/v4l2_slice_video_decode_accelerator.h"
@@ -68,7 +85,12 @@ index 92b9fcde8..3de16dcf7 100644
  #include "media/gpu/v4l2/v4l2_video_decode_accelerator.h"
  #include "ui/gl/gl_surface_egl.h"
  #endif
-@@ -64,10 +66,12 @@ gpu::VideoDecodeAcceleratorCapabilities GetDecoderCapabilitiesInternal(
+@@ -60,14 +62,16 @@ gpu::VideoDecodeAcceleratorCapabilities GetDecoderCapabilitiesInternal(
+ #if BUILDFLAG(USE_VAAPI)
+   capabilities.supported_profiles =
+       VaapiVideoDecodeAccelerator::GetSupportedProfiles();
+-#elif BUILDFLAG(USE_V4L2_CODEC) && BUILDFLAG(IS_CHROMEOS_ASH)
++#elif BUILDFLAG(USE_V4L2_CODEC)
    GpuVideoAcceleratorUtil::InsertUniqueDecodeProfiles(
        V4L2VideoDecodeAccelerator::GetSupportedProfiles(),
        &capabilities.supported_profiles);
@@ -81,9 +103,21 @@ index 92b9fcde8..3de16dcf7 100644
  #elif BUILDFLAG(IS_MAC)
    capabilities.supported_profiles =
        VTVideoDecodeAccelerator::GetSupportedProfiles(workarounds);
-@@ -146,8 +150,10 @@ GpuVideoDecodeAcceleratorFactory::CreateVDA(
+@@ -99,7 +103,7 @@ GpuVideoDecodeAcceleratorFactory::GetDecoderCapabilities(
+   static gpu::VideoDecodeAcceleratorCapabilities capabilities =
+       GetDecoderCapabilitiesInternal(gpu_preferences, workarounds);
+ 
+-#if BUILDFLAG(USE_V4L2_CODEC) && BUILDFLAG(IS_CHROMEOS_ASH)
++#if BUILDFLAG(USE_V4L2_CODEC)
+   // V4L2-only: the decoder devices may not be visible at the time the GPU
+   // process is starting. If the capabilities vector is empty, try to query the
+   // devices again in the hope that they will have appeared in the meantime.
+@@ -144,10 +148,12 @@ GpuVideoDecodeAcceleratorFactory::CreateVDA(
+   // both. In those cases prefer the VA creation function.
+ #if BUILDFLAG(USE_VAAPI)
      &GpuVideoDecodeAcceleratorFactory::CreateVaapiVDA,
- #elif BUILDFLAG(USE_V4L2_CODEC) && BUILDFLAG(IS_CHROMEOS_ASH)
+-#elif BUILDFLAG(USE_V4L2_CODEC) && BUILDFLAG(IS_CHROMEOS_ASH)
++#elif BUILDFLAG(USE_V4L2_CODEC)
      &GpuVideoDecodeAcceleratorFactory::CreateV4L2VDA,
 +#if !BUILDFLAG(USE_LINUX_V4L2)
      &GpuVideoDecodeAcceleratorFactory::CreateV4L2SliceVDA,
@@ -92,6 +126,15 @@ index 92b9fcde8..3de16dcf7 100644
  
  #if BUILDFLAG(IS_MAC)
      &GpuVideoDecodeAcceleratorFactory::CreateVTVDA,
+@@ -191,7 +197,7 @@ GpuVideoDecodeAcceleratorFactory::CreateVaapiVDA(
+                                                 gl_client_.bind_image));
+   return decoder;
+ }
+-#elif BUILDFLAG(USE_V4L2_CODEC) && BUILDFLAG(IS_CHROMEOS_ASH)
++#elif BUILDFLAG(USE_V4L2_CODEC)
+ std::unique_ptr<VideoDecodeAccelerator>
+ GpuVideoDecodeAcceleratorFactory::CreateV4L2VDA(
+     const gpu::GpuDriverBugWorkarounds& /*workarounds*/,
 @@ -207,6 +213,7 @@ GpuVideoDecodeAcceleratorFactory::CreateV4L2VDA(
    return decoder;
  }
@@ -109,10 +152,16 @@ index 92b9fcde8..3de16dcf7 100644
  #if BUILDFLAG(IS_MAC)
  std::unique_ptr<VideoDecodeAccelerator>
 diff --git a/media/gpu/gpu_video_decode_accelerator_factory.h b/media/gpu/gpu_video_decode_accelerator_factory.h
-index 7f3bb5d86..53138292b 100644
+index 7f3bb5d86..f43aa3ab2 100644
 --- a/media/gpu/gpu_video_decode_accelerator_factory.h
 +++ b/media/gpu/gpu_video_decode_accelerator_factory.h
-@@ -104,11 +104,13 @@ class MEDIA_GPU_EXPORT GpuVideoDecodeAcceleratorFactory {
+@@ -99,16 +99,18 @@ class MEDIA_GPU_EXPORT GpuVideoDecodeAcceleratorFactory {
+       const gpu::GpuDriverBugWorkarounds& workarounds,
+       const gpu::GpuPreferences& gpu_preferences,
+       MediaLog* media_log) const;
+-#elif BUILDFLAG(USE_V4L2_CODEC) && BUILDFLAG(IS_CHROMEOS_ASH)
++#elif BUILDFLAG(USE_V4L2_CODEC)
+   std::unique_ptr<VideoDecodeAccelerator> CreateV4L2VDA(
        const gpu::GpuDriverBugWorkarounds& workarounds,
        const gpu::GpuPreferences& gpu_preferences,
        MediaLog* media_log) const;
@@ -444,5 +493,5 @@ index cb8f06faf..a124f9f11 100644
  
    if (!backend_->Initialize()) {
 -- 
-2.34.1
+2.14.3
 
